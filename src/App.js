@@ -4,6 +4,7 @@ import './App.css';
 import Header from './components/Header'
 import ToyForm from './components/ToyForm'
 import ToyContainer from './components/ToyContainer'
+import { isCompositeComponent } from 'react-dom/test-utils';
 
 
 class App extends React.Component{
@@ -17,14 +18,6 @@ class App extends React.Component{
     let newBoolean = !this.state.display
     this.setState({
       display: newBoolean
-    })
-  }
-
-  componentDidMount() {
-    fetch('http://localhost:3000/toys')
-    .then(response => response.json())
-    .then(json => {
-      this.setState({toys: json})
     })
   }
 
@@ -56,6 +49,63 @@ class App extends React.Component{
 
   }
 
+  handleDeleteToy = (removeToy) => {
+    const toyID = removeToy.id 
+
+    fetch(`http://localhost:3000/toys/${toyID}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    const newToys = this.state.toys.filter(toy => toy !== removeToy)
+
+    this.setState({toys: newToys})
+  }
+
+
+  handleLikeToy = (likedToy) => {
+    const toyID = likedToy.id 
+    const increaseLikes = parseInt(likedToy.likes) + 1
+
+    const likesData = {
+      likes: increaseLikes
+    }
+
+    const PatchConfig = {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(likesData)
+    }
+
+    fetch(`http://localhost:3000/toys/${toyID}`, PatchConfig)
+    .then(response => response.json())
+    .then(json => {
+      const toyChange = this.state.toys.map(toy => toy.id === toyID ? json : {...toy})
+      this.setState({toys: toyChange})
+    })
+
+  }
+
+  fetchToys = () => {
+    fetch('http://localhost:3000/toys')
+    .then(response => response.json())
+    .then(json => {
+      this.setState({toys: json})
+      
+    })
+  }
+
+  componentDidMount() {
+    this.fetchToys()
+  }
+
+
+
   render(){
     return (
       <>
@@ -72,7 +122,7 @@ class App extends React.Component{
 
         { this.state.toys.length !== 0
             ?
-          <ToyContainer toys={this.state.toys}/>
+          <ToyContainer toys={this.state.toys} handleDeleteToy={this.handleDeleteToy} handleLikeToy={this.handleLikeToy}/>
             :
           null
         }
